@@ -22,9 +22,9 @@ Microsoft Power Automate (Cloud) · Microsoft 365 (Outlook, Excel, Calendar) · 
 ## Otros proyectos
 
 Para el lado de **agentes de IA**, mira mi proyecto destacado:
-👉 [News Reporter Agent](https://github.com/CarlesChe7/News-Master-Reporter)
+👉 [News Reporter Agent](https://github.com/CarlesEscrichAndreu/News-Master-Reporter)
 
 ## Autor
 
 **Carles Escrich Andreu** · Consultor de IA e Hiperautomatización · MB-800
-[LinkedIn](https://www.linkedin.com/in/CarlesEscrichAndreu) · [GitHub](https://github.com/CarlesChe7)
+[LinkedIn](https://www.linkedin.com/in/CarlesEscrichAndreu) · [GitHub](https://github.com/CarlesEscrichAndreu)
