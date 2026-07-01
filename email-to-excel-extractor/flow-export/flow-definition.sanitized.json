@@ -1,0 +1,88 @@
+{
+  "comment": "Version anonimizada con fines de portfolio. Todos los identificadores internos (tenant, usuario, conexiones, drive, tabla, buzon) han sido sustituidos por <PLACEHOLDERS>. NO es un paquete importable tal cual: es una representacion fiel de la logica del flujo.",
+  "displayName": "Flagged email -> extract fields -> deduplicated row in Excel",
+  "trigger": {
+    "When_an_email_is_flagged_(V3)": {
+      "operationId": "OnFlaggedEmailV3",
+      "splitOn": "@triggerOutputs()?['body/value']",
+      "inputs": {
+        "folderPath": "Inbox",
+        "includeAttachments": false
+      },
+      "runtimeConfiguration": {
+        "concurrency": { "runs": 1 }
+      }
+    }
+  },
+  "actions": {
+    "Html_to_text": {
+      "runAfter": {},
+      "operationId": "HtmlToText",
+      "inputs": { "Content": "<p>@{triggerOutputs()?['body/body']}</p>" }
+    },
+    "VIN": {
+      "runAfter": { "Html_to_text": ["Succeeded"] },
+      "type": "Compose",
+      "inputs": "@trim(first(split(last(split(outputs('Html_to_text')?['body'], 'VIN:')), decodeUriComponent('%0A'))))"
+    },
+    "Pieza_causal": {
+      "runAfter": { "VIN": ["Succeeded"] },
+      "type": "Compose",
+      "inputs": "@trim(first(split(last(split(outputs('Html_to_text')?['body'], 'Pieza causal:')), decodeUriComponent('%0A'))))"
+    },
+    "Modo_de_fallo": {
+      "runAfter": { "Pieza_causal": ["Succeeded"] },
+      "type": "Compose",
+      "inputs": "@trim(first(split(last(split(outputs('Html_to_text')?['body'], 'Modo de fallo:')), decodeUriComponent('%0A'))))"
+    },
+    "Fecha": {
+      "runAfter": { "Modo_de_fallo": ["Succeeded"] },
+      "type": "Compose",
+      "inputs": "@convertTimeZone(triggerOutputs()?['body/receivedDateTime'], 'UTC', 'Romance Standard Time', 'yyyy-MM-dd HH:mm')"
+    },
+    "List_rows_present_in_a_table": {
+      "runAfter": { "Fecha": ["Succeeded"] },
+      "operationId": "GetItems",
+      "inputs": {
+        "source": "me",
+        "drive": "<DRIVE_ID>",
+        "file": "<EXCEL_FILE_ID>",
+        "table": "<TABLE_ID>",
+        "$filter": "VIN eq '@{outputs('VIN')}'"
+      }
+    },
+    "Condition": {
+      "runAfter": { "List_rows_present_in_a_table": ["Succeeded"] },
+      "type": "If",
+      "expression": {
+        "and": [
+          { "equals": ["@length(outputs('List_rows_present_in_a_table')?['body/value'])", 0] }
+        ]
+      },
+      "actions": {
+        "Add_a_row_into_a_table": {
+          "operationId": "AddRowV2",
+          "inputs": {
+            "drive": "<DRIVE_ID>",
+            "file": "<EXCEL_FILE_ID>",
+            "table": "<TABLE_ID>",
+            "item/VIN": "@outputs('VIN')",
+            "item/Pieza causal": "@outputs('Pieza_causal')",
+            "item/Modo de fallo": "@outputs('Modo_de_fallo')",
+            "item/Fecha": "@outputs('Fecha')",
+            "item/ACABADO": "No"
+          }
+        },
+        "Move_email_(V2)": {
+          "runAfter": { "Add_a_row_into_a_table": ["Succeeded"] },
+          "operationId": "MoveV2",
+          "inputs": {
+            "messageId": "@triggerOutputs()?['body/id']",
+            "folderPath": "<MAILBOX_FOLDER_ID>"
+          }
+        }
+      },
+      "else": { "actions": {} }
+    }
+  }
+}

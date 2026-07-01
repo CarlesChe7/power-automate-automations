@@ -1,0 +1,18 @@
+# --- Exportaciones SIN anonimizar: NUNCA subir ---
+raw/
+**/raw/
+*.raw.json
+*.original.*
+
+# --- Secretos / conexiones ---
+.env
+*.secret
+*connection*.json
+
+# --- Capturas sin revisar ---
+**/screenshots/_unreviewed/
+
+# --- Basura del SO ---
+.DS_Store
+Thumbs.db
+desktop.ini

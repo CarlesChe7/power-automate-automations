@@ -1,0 +1,60 @@
+{
+  "comment": "Version anonimizada con fines de portfolio. Identificadores internos (tenant, usuario, conexion, calendario, correo) sustituidos por <PLACEHOLDERS>. Representacion fiel de la logica, no un paquete importable tal cual.",
+  "displayName": "Eventos de hoy",
+  "trigger": {
+    "Recurrence": {
+      "type": "Recurrence",
+      "recurrence": {
+        "frequency": "Day",
+        "interval": 1,
+        "timeZone": "Romance Standard Time",
+        "schedule": { "hours": ["8"], "minutes": [0] }
+      }
+    }
+  },
+  "actions": {
+    "Initialize_variable": {
+      "runAfter": {},
+      "type": "InitializeVariable",
+      "inputs": { "variables": [{ "name": "Eventos", "type": "array" }] }
+    },
+    "Get_calendar_view_of_events_(V3)": {
+      "runAfter": { "Initialize_variable": ["Succeeded"] },
+      "operationId": "GetEventsCalendarViewV3",
+      "inputs": {
+        "calendarId": "<CALENDAR_ID>",
+        "startDateTimeUtc": "@formatDateTime(convertTimeZone(utcNow(),'UTC','Romance Standard Time'),'yyyy-MM-ddT00:00:00')",
+        "endDateTimeUtc": "@formatDateTime(convertTimeZone(utcNow(),'UTC','Romance Standard Time'),'yyyy-MM-ddT23:59:59')"
+      }
+    },
+    "For_each": {
+      "runAfter": { "Get_calendar_view_of_events_(V3)": ["Succeeded"] },
+      "type": "Foreach",
+      "foreach": "@outputs('Get_calendar_view_of_events_(V3)')?['body/value']",
+      "actions": {
+        "Append_to_array_variable": {
+          "type": "AppendToArrayVariable",
+          "inputs": {
+            "name": "Eventos",
+            "value": "<b>@{items('For_each')?['subject']}</b> de @{formatDateTime(items('For_each')?['start'], 'HH:mm')} a @{formatDateTime(items('For_each')?['end'], 'HH:mm')}"
+          }
+        }
+      }
+    },
+    "Join": {
+      "runAfter": { "For_each": ["Succeeded"] },
+      "type": "Join",
+      "inputs": { "from": "@variables('Eventos')", "joinWith": "<br>" }
+    },
+    "Send_an_email_(V2)": {
+      "runAfter": { "Join": ["Succeeded"] },
+      "operationId": "SendEmailV2",
+      "inputs": {
+        "emailMessage/To": "<YOUR_EMAIL>",
+        "emailMessage/Subject": "Eventos de hoy",
+        "emailMessage/Body": "<p>@{body('Join')}</p>",
+        "emailMessage/Importance": "Normal"
+      }
+    }
+  }
+}
